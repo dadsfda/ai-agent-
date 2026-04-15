@@ -1,6 +1,7 @@
 package com.yupi.yuaiagent.tools;
 
 import cn.hutool.core.io.FileUtil;
+import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -12,11 +13,20 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 /**
  * PDF 生成工具
  */
 public class PDFGenerationTool {
+
+    private static final List<Path> CJK_FONT_CANDIDATES = List.of(
+            Path.of("C:/Windows/Fonts/simhei.ttf"),
+            Path.of("C:/Windows/Fonts/simsunb.ttf"),
+            Path.of("C:/Windows/Fonts/Deng.ttf")
+    );
 
     @Tool(description = "Generate a PDF file with given content", returnDirect = false)
     public String generatePDF(
@@ -25,28 +35,31 @@ public class PDFGenerationTool {
         String fileDir = FileConstant.FILE_SAVE_DIR + "/pdf";
         String filePath = fileDir + "/" + fileName;
         try {
-            // 创建目录
             FileUtil.mkdir(fileDir);
-            // 创建 PdfWriter 和 PdfDocument 对象
             try (PdfWriter writer = new PdfWriter(filePath);
                  PdfDocument pdf = new PdfDocument(writer);
                  Document document = new Document(pdf)) {
-                // 自定义字体（需要人工下载字体文件到特定目录）
-//                String fontPath = Paths.get("src/main/resources/static/fonts/simsun.ttf")
-//                        .toAbsolutePath().toString();
-//                PdfFont font = PdfFontFactory.createFont(fontPath,
-//                        PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
-                // 使用内置中文字体
-                PdfFont font = PdfFontFactory.createFont("STSongStd-Light", "UniGB-UCS2-H");
+                PdfFont font = createPdfFont();
                 document.setFont(font);
-                // 创建段落
                 Paragraph paragraph = new Paragraph(content);
-                // 添加段落并关闭文档
                 document.add(paragraph);
             }
             return "PDF generated successfully to: " + filePath;
         } catch (IOException e) {
             return "Error generating PDF: " + e.getMessage();
         }
+    }
+
+    private PdfFont createPdfFont() throws IOException {
+        for (Path fontPath : CJK_FONT_CANDIDATES) {
+            if (Files.exists(fontPath)) {
+                return PdfFontFactory.createFont(
+                        fontPath.toString(),
+                        PdfEncodings.IDENTITY_H,
+                        PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED
+                );
+            }
+        }
+        return PdfFontFactory.createFont("Helvetica");
     }
 }
