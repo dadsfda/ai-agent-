@@ -36,18 +36,20 @@
 - MCP Client / MCP Server
 
 ## 主要能力
+![alt text](image.png)
 
 ### 1. AI 聊天应用
 
 后端提供基础聊天与流式响应接口，可接入 DashScope 模型完成普通问答场景。
-
+![alt text](image-1.png)
 ### 2. 超级智能体
 
 项目内置 `YuManus` 风格 Agent，支持根据用户目标自动分步执行任务，例如：
 - 搜索武汉热门景点
 - 规划一日游路线
 - 调用 PDF 工具生成文档
-
+![alt text](image-2.png)
+![alt text](image-3.png)
 ### 3. 工具调用
 
 当前仓库已经集成并验证过以下工具链：

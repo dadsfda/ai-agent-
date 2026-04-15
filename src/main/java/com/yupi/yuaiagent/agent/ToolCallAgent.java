@@ -19,7 +19,9 @@ import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.tool.ToolCallback;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @EqualsAndHashCode(callSuper = true)
@@ -29,8 +31,14 @@ public class ToolCallAgent extends ReActAgent {
 
     private static final int MAX_TOOL_ARGUMENT_LENGTH = 1000;
     private static final String COMPACTED_TOOL_ARGUMENTS = "{\"omitted\":true}";
+    private static final String TERMINATE_TOOL_NAME = "doTerminate";
+    private static final String TERMINATE_PLACEHOLDER = "\u4efb\u52a1\u7ed3\u675f";
+    private static final String TOOL_PREFIX = "\u8c03\u7528\u5de5\u5177: ";
+    private static final String NO_TOOL = "\u65e0";
+    private static final String PDF_READY_PREFIX = "PDF_READY:";
 
     private final ToolCallback[] availableTools;
+    private final List<String> postStepOutputs = new ArrayList<>();
     private ChatResponse toolCallChatResponse;
     private String lastAssistantResponse;
     private final ToolCallingManager toolCallingManager;
@@ -62,9 +70,8 @@ public class ToolCallAgent extends ReActAgent {
             this.toolCallChatResponse = chatResponse;
             AssistantMessage assistantMessage = chatResponse.getResult().getOutput();
             List<AssistantMessage.ToolCall> toolCallList = assistantMessage.getToolCalls();
-            String result = assistantMessage.getText();
-            this.lastAssistantResponse = result;
-            log.info("{} think result: {}", getName(), result);
+            this.lastAssistantResponse = assistantMessage.getText();
+            log.info("{} think result: {}", getName(), lastAssistantResponse);
             log.info("{} selected {} tools", getName(), toolCallList.size());
             String toolCallInfo = toolCallList.stream()
                     .map(toolCall -> String.format("tool=%s, args=%s", toolCall.name(), toolCall.arguments()))
@@ -109,16 +116,55 @@ public class ToolCallAgent extends ReActAgent {
         ToolExecutionResult toolExecutionResult = toolCallingManager.executeToolCalls(prompt, toolCallChatResponse);
         setMessageList(new ArrayList<>(compactConversationHistory(toolExecutionResult.conversationHistory())));
         ToolResponseMessage toolResponseMessage = (ToolResponseMessage) CollUtil.getLast(toolExecutionResult.conversationHistory());
-        boolean terminateToolCalled = toolResponseMessage.getResponses().stream()
-                .anyMatch(response -> response.name().equals("doTerminate"));
+        List<ToolResponseMessage.ToolResponse> toolResponses = toolResponseMessage.getResponses();
+        collectPostStepOutputs(toolResponses);
+        boolean terminateToolCalled = toolResponses.stream()
+                .anyMatch(response -> TERMINATE_TOOL_NAME.equals(response.name()));
         if (terminateToolCalled) {
             setState(AgentState.FINISHED);
+            String finalResponse = extractFinalResponse(toolResponses, lastAssistantResponse);
+            if (StrUtil.isNotBlank(finalResponse)) {
+                postStepOutputs.add(finalResponse);
+            }
         }
-        String results = toolResponseMessage.getResponses().stream()
-                .map(response -> "Tool " + response.name() + " result: " + response.responseData())
-                .collect(Collectors.joining("\n"));
-        log.info(results);
-        return results;
+        AssistantMessage assistantMessage = toolCallChatResponse.getResult().getOutput();
+        String summary = summarizeToolStep(assistantMessage.getToolCalls(), toolResponses);
+        log.info(summary);
+        return summary;
+    }
+
+    String summarizeToolStep(List<AssistantMessage.ToolCall> toolCalls,
+                             List<ToolResponseMessage.ToolResponse> toolResponses) {
+        return TOOL_PREFIX + summarizeToolNames(toolCalls, toolResponses);
+    }
+
+    String extractFinalResponse(List<ToolResponseMessage.ToolResponse> toolResponses, String assistantResponse) {
+        String toolResponse = "";
+        if (toolResponses != null) {
+            toolResponse = toolResponses.stream()
+                    .filter(response -> TERMINATE_TOOL_NAME.equals(response.name()))
+                    .map(ToolResponseMessage.ToolResponse::responseData)
+                    .map(this::normalizeToolResponse)
+                    .filter(StrUtil::isNotBlank)
+                    .filter(responseData -> !TERMINATE_PLACEHOLDER.equals(responseData))
+                    .findFirst()
+                    .orElse("");
+        }
+        if (StrUtil.isNotBlank(toolResponse)) {
+            return toolResponse;
+        }
+        return StrUtil.blankToDefault(StrUtil.trim(assistantResponse), "");
+    }
+
+    void collectPostStepOutputs(List<ToolResponseMessage.ToolResponse> toolResponses) {
+        if (toolResponses == null) {
+            return;
+        }
+        toolResponses.stream()
+                .map(ToolResponseMessage.ToolResponse::responseData)
+                .map(this::normalizeToolResponse)
+                .filter(responseData -> responseData.startsWith(PDF_READY_PREFIX))
+                .forEach(postStepOutputs::add);
     }
 
     List<Message> compactConversationHistory(List<Message> messageList) {
@@ -143,6 +189,44 @@ public class ToolCallAgent extends ReActAgent {
                     );
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    @Override
+    protected List<String> consumePostStepOutputs() {
+        List<String> outputs = new ArrayList<>(postStepOutputs);
+        postStepOutputs.clear();
+        return outputs;
+    }
+
+    private String summarizeToolNames(List<AssistantMessage.ToolCall> toolCalls,
+                                      List<ToolResponseMessage.ToolResponse> toolResponses) {
+        Set<String> toolNames = new LinkedHashSet<>();
+        if (toolCalls != null && !toolCalls.isEmpty()) {
+            toolCalls.stream()
+                    .map(AssistantMessage.ToolCall::name)
+                    .filter(StrUtil::isNotBlank)
+                    .forEach(toolNames::add);
+        } else if (toolResponses != null) {
+            toolResponses.stream()
+                    .map(ToolResponseMessage.ToolResponse::name)
+                    .filter(StrUtil::isNotBlank)
+                    .forEach(toolNames::add);
+        }
+        if (toolNames.isEmpty()) {
+            return NO_TOOL;
+        }
+        return String.join("、", toolNames);
+    }
+
+    private String normalizeToolResponse(String responseData) {
+        if (StrUtil.isBlank(responseData)) {
+            return "";
+        }
+        String normalized = StrUtil.trim(responseData);
+        if (normalized.length() >= 2 && normalized.startsWith("\"") && normalized.endsWith("\"")) {
+            normalized = normalized.substring(1, normalized.length() - 1);
+        }
+        return StrUtil.unWrap(normalized, '"');
     }
 
     private String compactToolArguments(String arguments) {

@@ -1,7 +1,7 @@
 <template>
-  <div class="ai-avatar-fallback" :class="type">
-    <span v-if="type === 'love'">❤️</span>
-    <span v-else>🤖</span>
+  <div class="avatar-shell" :class="type">
+    <span v-if="type === 'love'">爱</span>
+    <span v-else>智</span>
   </div>
 </template>
 
@@ -9,27 +9,31 @@
 defineProps({
   type: {
     type: String,
-    default: 'default'
+    default: 'super'
   }
 })
 </script>
 
 <style scoped>
-.ai-avatar-fallback {
+.avatar-shell {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
   border-radius: 50%;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
 .love {
-  background: linear-gradient(45deg, #ff6b8b, #ff8e8e);
+  background: linear-gradient(135deg, #d14d72, #f08b66);
 }
 
-.default, .super {
-  background: linear-gradient(45deg, #3f51b5, #5677fc);
+.super,
+.default {
+  background: linear-gradient(135deg, #0f766e, #1d4ed8);
 }
-</style> 
+</style>

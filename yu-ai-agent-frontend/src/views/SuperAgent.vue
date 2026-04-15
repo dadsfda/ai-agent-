@@ -1,286 +1,275 @@
 <template>
-  <div class="super-agent-container">
-    <div class="header">
-      <div class="back-button" @click="goBack">返回</div>
-      <h1 class="title">AI超级智能体</h1>
-      <div class="placeholder"></div>
-    </div>
-    
-    <div class="content-wrapper">
-      <div class="chat-area">
-        <ChatRoom 
-          :messages="messages" 
-          :connection-status="connectionStatus"
-          ai-type="super"
-          @send-message="sendMessage"
-        />
-      </div>
-    </div>
-    
-    <div class="footer-container">
-      <AppFooter />
-    </div>
+  <div class="page-shell">
+    <main class="workspace-page">
+      <header class="workspace-header super-header">
+        <button type="button" class="back-link" @click="goBack">返回首页</button>
+        <div>
+          <p class="workspace-label">Super Agent</p>
+          <h1>超级智能体</h1>
+        </div>
+        <div class="status-card">
+          <span>当前状态</span>
+          <strong>{{ statusLabel }}</strong>
+        </div>
+      </header>
+
+      <ChatRoom
+        :messages="messages"
+        :connection-status="connectionStatus"
+        ai-type="super"
+        badge="任务助手"
+        title="想查、想整理、想生成结果，都可以直接说"
+        description="适合做攻略、查资料、列清单、整理输出。"
+        placeholder="比如：请帮我查找武汉市的人气景点，规划一日游并生成 pdf"
+        :suggestions="suggestions"
+        :highlights="highlights"
+        agent-name="超级智能体"
+        @send-message="sendMessage"
+      />
+    </main>
+    <AppFooter />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useHead } from '@vueuse/head'
 import ChatRoom from '../components/ChatRoom.vue'
 import AppFooter from '../components/AppFooter.vue'
-import { chatWithManus } from '../api'
+import { chatWithManus, resolveApiUrl } from '../api'
 
-// 设置页面标题和元数据
 useHead({
-  title: 'AI超级智能体 - 鱼皮AI超级智能体应用平台',
+  title: '超级智能体',
   meta: [
     {
       name: 'description',
-      content: 'AI超级智能体是鱼皮AI超级智能体应用平台的全能助手，能解答各类专业问题，提供精准建议和解决方案'
-    },
-    {
-      name: 'keywords',
-      content: 'AI超级智能体,智能助手,专业问答,AI问答,专业建议,鱼皮,AI智能体'
+      content: '适合处理多步骤任务的 AI 助手。'
     }
   ]
 })
+
+const PDF_READY_PREFIX = 'PDF_READY:'
 
 const router = useRouter()
 const messages = ref([])
 const connectionStatus = ref('disconnected')
 let eventSource = null
+let receivedAiMessage = false
 
-// 添加消息到列表
-const addMessage = (content, isUser, type = '') => {
+const suggestions = [
+  '请帮我查找武汉市的人气景点，规划一日游并生成 pdf',
+  '帮我整理一份适合周末自驾的杭州周边短途方案',
+  '请帮我调研 3 款适合 Java 开发者的 AI 编程工具并输出比较表'
+]
+
+const highlights = [
+  '适合一步步完成的任务',
+  '支持搜索、写文件和生成结果',
+  '过程和结论会分开显示'
+]
+
+const statusLabel = computed(() => {
+  if (connectionStatus.value === 'connecting') return '正在执行'
+  if (connectionStatus.value === 'error') return '执行异常'
+  return '等待任务'
+})
+
+const addMessage = (payload, isUser) => {
+  if (typeof payload === 'string') {
+    messages.value.push({
+      content: payload,
+      isUser,
+      time: Date.now()
+    })
+    return
+  }
   messages.value.push({
-    content,
     isUser,
-    type,
-    time: new Date().getTime()
+    time: Date.now(),
+    ...payload
   })
 }
 
-// 发送消息
+const tryParsePdfPayload = (rawPayload) => {
+  const normalizedPayload = rawPayload.trim()
+  const candidates = [
+    normalizedPayload,
+    normalizedPayload.replace(/\\"/g, '"'),
+    normalizedPayload.replace(/^"|"$/g, '').replace(/\\"/g, '"')
+  ]
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate)
+    } catch {
+      // 继续尝试下一种格式
+    }
+  }
+  return null
+}
+
+const parseAssistantMessage = (rawMessage) => {
+  if (!rawMessage.startsWith(PDF_READY_PREFIX)) {
+    return { content: rawMessage }
+  }
+  const payload = tryParsePdfPayload(rawMessage.slice(PDF_READY_PREFIX.length))
+  if (!payload?.fileName || !payload?.downloadPath) {
+    return { content: rawMessage }
+  }
+  return {
+    content: `PDF 已生成：${payload.fileName}`,
+    downloadUrl: resolveApiUrl(payload.downloadPath),
+    fileName: payload.fileName
+  }
+}
+
+const resetStreamState = () => {
+  receivedAiMessage = false
+}
+
+const closeCurrentStream = () => {
+  if (eventSource) {
+    eventSource.close()
+    eventSource = null
+  }
+}
+
+const finishStream = () => {
+  connectionStatus.value = 'disconnected'
+  closeCurrentStream()
+}
+
 const sendMessage = (message) => {
-  addMessage(message, true, 'user-question')
-  
-  // 连接SSE
-  if (eventSource) {
-    eventSource.close()
-  }
-  
-  // 设置连接状态
+  addMessage(message, true)
+  closeCurrentStream()
+  resetStreamState()
+
   connectionStatus.value = 'connecting'
-  
-  // 临时存储
-  let messageBuffer = []; // 用于存储SSE消息的缓冲区
-  let lastBubbleTime = Date.now(); // 上一个气泡的创建时间
-  let isFirstResponse = true; // 是否是第一次响应
-  
-  const chineseEndPunctuation = ['。', '！', '？', '…']; // 中文句子结束标点
-  const minBubbleInterval = 800; // 气泡最小间隔时间(毫秒)
-  
-  // 创建消息气泡的函数
-  const createBubble = (content, type = 'ai-answer') => {
-    if (!content.trim()) return;
-    
-    // 添加适当的延迟，使消息显示更自然
-    const now = Date.now();
-    const timeSinceLastBubble = now - lastBubbleTime;
-    
-    if (isFirstResponse) {
-      // 第一条消息立即显示
-      addMessage(content, false, type);
-      isFirstResponse = false;
-    } else if (timeSinceLastBubble < minBubbleInterval) {
-      // 如果与上一气泡间隔太短，添加一个延迟
-      setTimeout(() => {
-        addMessage(content, false, type);
-      }, minBubbleInterval - timeSinceLastBubble);
-    } else {
-      // 正常添加消息
-      addMessage(content, false, type);
-    }
-    
-    lastBubbleTime = now;
-    messageBuffer = []; // 清空缓冲区
-  };
-  
   eventSource = chatWithManus(message)
-  
-  // 监听SSE消息
+
   eventSource.onmessage = (event) => {
-    const data = event.data
-    
-    if (data && data !== '[DONE]') {
-      messageBuffer.push(data);
-      
-      // 检查是否应该创建新气泡
-      const combinedText = messageBuffer.join('');
-      
-      // 句子结束或消息长度达到阈值
-      const lastChar = data.charAt(data.length - 1);
-      const hasCompleteSentence = chineseEndPunctuation.includes(lastChar) || data.includes('\n\n');
-      const isLongEnough = combinedText.length > 40;
-      
-      if (hasCompleteSentence || isLongEnough) {
-        createBubble(combinedText);
-      }
+    const data = event.data?.trim()
+    if (!data || data === '[DONE]') {
+      finishStream()
+      return
     }
-    
-    if (data === '[DONE]') {
-      // 如果还有未显示的内容，创建最后一个气泡
-      if (messageBuffer.length > 0) {
-        const remainingContent = messageBuffer.join('');
-        createBubble(remainingContent, 'ai-final');
-      }
-      
-      // 完成后关闭连接
-      connectionStatus.value = 'disconnected'
-      eventSource.close()
-    }
+    receivedAiMessage = true
+    addMessage(parseAssistantMessage(data), false)
   }
-  
-  // 监听SSE错误
-  eventSource.onerror = (error) => {
-    console.error('SSE Error:', error)
+
+  eventSource.onerror = () => {
+    if (receivedAiMessage) {
+      finishStream()
+      return
+    }
     connectionStatus.value = 'error'
-    eventSource.close()
-    
-    // 如果出错时有未显示的内容，也创建气泡
-    if (messageBuffer.length > 0) {
-      const remainingContent = messageBuffer.join('');
-      createBubble(remainingContent, 'ai-error');
-    }
+    closeCurrentStream()
   }
 }
 
-// 返回主页
-const goBack = () => {
-  router.push('/')
-}
+const goBack = () => router.push('/')
 
-// 页面加载时添加欢迎消息
 onMounted(() => {
-  // 添加欢迎消息
-  addMessage('你好，我是AI超级智能体。我可以解答各类问题，提供专业建议，请问有什么可以帮助你的吗？', false)
+  addMessage('你好，我是超级智能体。把目标说清楚一点，我会帮你一步步处理。', false)
 })
 
-// 组件销毁前关闭SSE连接
-onBeforeUnmount(() => {
-  if (eventSource) {
-    eventSource.close()
-  }
-})
+onBeforeUnmount(closeCurrentStream)
 </script>
 
 <style scoped>
-.super-agent-container {
-  display: flex;
-  flex-direction: column;
+.page-shell {
   min-height: 100vh;
-  background-color: #f9fbff;
+  padding-top: 24px;
 }
 
-.header {
+.workspace-page {
+  width: min(calc(100% - 32px), var(--container));
+  margin: 0 auto;
+}
+
+.workspace-header {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 150px minmax(0, 1fr) 210px;
+  gap: 14px;
   align-items: center;
-  padding: 16px 24px;
-  background-color: #3f51b5;
-  color: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  margin-bottom: 16px;
+  padding: 22px 24px;
+  border-radius: 28px;
+  box-shadow: var(--shadow);
 }
 
-.back-button {
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: opacity 0.2s;
+.super-header {
+  background: linear-gradient(135deg, rgba(236, 248, 245, 0.95), rgba(232, 242, 255, 0.88));
+  border: 1px solid rgba(15, 118, 110, 0.14);
+}
+
+.back-link {
   justify-self: start;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(31, 42, 36, 0.08);
+  font-size: 0.9rem;
 }
 
-.back-button:hover {
-  opacity: 0.8;
+.workspace-label {
+  margin: 0 0 6px;
+  color: var(--primary-deep);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
 }
 
-.back-button:before {
-  content: '←';
-  margin-right: 8px;
-}
-
-.title {
-  font-size: 20px;
-  font-weight: bold;
+.workspace-header h1 {
   margin: 0;
-  text-align: center;
-  justify-self: center;
+  font-size: clamp(1.7rem, 2.4vw, 2.4rem);
+  line-height: 1;
 }
 
-.placeholder {
-  width: 1px;
+.status-card {
   justify-self: end;
+  padding: 12px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.76);
+  display: grid;
+  gap: 4px;
 }
 
-.content-wrapper {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
+.status-card span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
 }
 
-.chat-area {
-  flex: 1;
-  padding: 16px;
-  overflow: hidden;
-  position: relative;
-  /* 设置最小高度确保内容显示正常 */
-  min-height: calc(100vh - 56px - 180px); /* 100vh减去头部高度和页脚高度 */
-  margin-bottom: 16px; /* 为页脚留出空间 */
+.status-card strong {
+  font-size: 0.95rem;
 }
 
-.footer-container {
-  margin-top: auto;
-}
-
-/* 响应式样式 */
-@media (max-width: 768px) {
-  .header {
-    padding: 12px 16px;
+@media (max-width: 1024px) {
+  .workspace-header {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
-  
-  .title {
-    font-size: 18px;
-  }
-  
-  .chat-area {
-    padding: 12px;
-    min-height: calc(100vh - 48px - 160px); /* 调整计算值 */
-    margin-bottom: 12px;
+
+  .status-card,
+  .back-link {
+    justify-self: start;
   }
 }
 
-@media (max-width: 480px) {
-  .header {
-    padding: 10px 12px;
+@media (max-width: 640px) {
+  .page-shell {
+    padding-top: 16px;
   }
-  
-  .back-button {
-    font-size: 14px;
+
+  .workspace-page {
+    width: min(calc(100% - 20px), var(--container));
   }
-  
-  .title {
-    font-size: 16px;
-  }
-  
-  .chat-area {
-    padding: 8px;
-    min-height: calc(100vh - 42px - 150px); /* 再次调整计算值 */
-    margin-bottom: 8px;
+
+  .workspace-header {
+    padding: 18px;
+    border-radius: 22px;
   }
 }
-</style> 
+</style>

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -18,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 class ToolCallAgentTest {
+
+    private static final String LONG_HTML = "<html><style>body{background:#fff;}</style><div class=\"content\">"
+            + "weather".repeat(200) + "</div></html>";
 
     @Test
     void thinkShouldSupportToolCallbacksWithoutTreatingThemAsAnnotatedTools() {
@@ -97,6 +101,73 @@ class ToolCallAgentTest {
 
         Assertions.assertEquals("{\"omitted\":true}", compactedToolCall.arguments());
         Assertions.assertEquals("writeFile", compactedToolCall.name());
+    }
+
+    @Test
+    void shouldSummarizeToolStepAsToolOnly() {
+        ToolCallAgent agent = new ToolCallAgent(new ToolCallback[0]);
+        AssistantMessage.ToolCall toolCall = new AssistantMessage.ToolCall(
+                "call-3",
+                "function",
+                "searchWeb",
+                "{\"query\":\"wuhan weather\"}"
+        );
+        ToolResponseMessage.ToolResponse toolResponse = new ToolResponseMessage.ToolResponse(
+                "tool-call-1",
+                "searchWeb",
+                LONG_HTML
+        );
+
+        String summary = agent.summarizeToolStep(List.of(toolCall), List.of(toolResponse));
+
+        Assertions.assertEquals("\u8c03\u7528\u5de5\u5177: searchWeb", summary);
+        Assertions.assertFalse(summary.contains("<html>"));
+        Assertions.assertFalse(summary.contains("weatherweather"));
+    }
+
+    @Test
+    void shouldExtractFinalResponseFromTerminateTool() {
+        ToolCallAgent agent = new ToolCallAgent(new ToolCallback[0]);
+        ToolResponseMessage.ToolResponse toolResponse = new ToolResponseMessage.ToolResponse(
+                "tool-call-2",
+                "doTerminate",
+                "Final weather answer"
+        );
+
+        String finalResponse = agent.extractFinalResponse(List.of(toolResponse), "fallback");
+
+        Assertions.assertEquals("Final weather answer", finalResponse);
+    }
+
+    @Test
+    void shouldFallbackToAssistantResponseWhenTerminateResponseIsPlaceholder() {
+        ToolCallAgent agent = new ToolCallAgent(new ToolCallback[0]);
+        ToolResponseMessage.ToolResponse toolResponse = new ToolResponseMessage.ToolResponse(
+                "tool-call-2",
+                "doTerminate",
+                "\u4efb\u52a1\u7ed3\u675f"
+        );
+
+        String finalResponse = agent.extractFinalResponse(List.of(toolResponse), "Tomorrow in Wuhan will be cloudy.");
+
+        Assertions.assertEquals("Tomorrow in Wuhan will be cloudy.", finalResponse);
+    }
+
+    @Test
+    void shouldExposePdfReadyPayloadAsPostStepOutput() {
+        ToolCallAgent agent = new ToolCallAgent(new ToolCallback[0]);
+        ToolResponseMessage.ToolResponse toolResponse = new ToolResponseMessage.ToolResponse(
+                "tool-call-3",
+                "generatePDF",
+                "PDF_READY:{\"fileName\":\"wuhan.pdf\",\"downloadPath\":\"/files/pdf/wuhan.pdf\"}"
+        );
+
+        agent.collectPostStepOutputs(List.of(toolResponse));
+
+        Assertions.assertEquals(
+                List.of("PDF_READY:{\"fileName\":\"wuhan.pdf\",\"downloadPath\":\"/files/pdf/wuhan.pdf\"}"),
+                agent.consumePostStepOutputs()
+        );
     }
 
     static class FakeChatModel implements ChatModel {

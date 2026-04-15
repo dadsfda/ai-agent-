@@ -1,47 +1,80 @@
 <template>
-  <div class="home-container">
-    <div class="header">
-      <div class="glitch-wrapper">
-        <h1 class="glitch-title">鱼皮AI超级智能体</h1>
-      </div>
-      <p class="subtitle">/ 探索AI的无限可能 /</p>
-      <div class="cyber-line"></div>
-    </div>
-    
-    <div class="apps-container">
-      <div class="app-card" @click="navigateTo('/love-master')">
-        <div class="card-glow"></div>
-        <div class="app-icon love-icon">❤️</div>
-        <div class="app-info">
-          <div class="app-title">AI恋爱大师</div>
-          <div class="app-desc">智能情感顾问，帮你解答恋爱烦恼</div>
+  <div class="page-shell">
+    <main class="home-page">
+      <section class="hero-card">
+        <div class="hero-copy">
+          <p class="eyebrow">AI Agent</p>
+          <h1>两种好用的 AI 助手，按你的场景直接选</h1>
+          <p class="hero-desc">
+            想聊情感、关系和沟通，就用恋爱大师；想查资料、做规划、生成文件，就用超级智能体。
+          </p>
+          <div class="hero-actions">
+            <button type="button" class="primary-btn" @click="navigateTo('/super-agent')">打开超级智能体</button>
+            <button type="button" class="secondary-btn" @click="navigateTo('/love-master')">打开恋爱大师</button>
+          </div>
         </div>
-        <div class="app-button">
-          <span class="btn-text">立即体验</span>
-          <span class="btn-icon">→</span>
+        <div class="hero-panel">
+          <div class="hero-stat">
+            <span>2</span>
+            <small>可直接使用的助手</small>
+          </div>
+          <div class="hero-stat">
+            <span>多步骤</span>
+            <small>支持过程可视化</small>
+          </div>
+          <div class="hero-note">
+            直接提需求就可以开始，不用先了解技术细节。
+          </div>
         </div>
-      </div>
-      
-      <div class="app-card" @click="navigateTo('/super-agent')">
-        <div class="card-glow"></div>
-        <div class="app-icon robot-icon">🤖</div>
-        <div class="app-info">
-          <div class="app-title">AI超级智能体</div>
-          <div class="app-desc">全能型AI助手，解决各类专业问题</div>
+      </section>
+
+      <section class="card-grid">
+        <article class="product-card love" @click="navigateTo('/love-master')">
+          <div class="card-top">
+            <span class="card-icon">爱</span>
+            <span class="card-tag">陪伴对话</span>
+          </div>
+          <h2>恋爱大师</h2>
+          <p>适合聊感情、关系、沟通方式，也适合想找个人一起理清情绪的时候。</p>
+          <ul>
+            <li>更自然的聊天体验</li>
+            <li>支持连续对话</li>
+            <li>适合慢慢聊清楚问题</li>
+          </ul>
+          <div class="card-link">进入聊天</div>
+        </article>
+
+        <article class="product-card super" @click="navigateTo('/super-agent')">
+          <div class="card-top">
+            <span class="card-icon">智</span>
+            <span class="card-tag">任务处理</span>
+          </div>
+          <h2>超级智能体</h2>
+          <p>适合查资料、做计划、整理结果，或者把一个任务拆成几步慢慢完成。</p>
+          <ul>
+            <li>会分步骤执行任务</li>
+            <li>支持搜索和文件生成</li>
+            <li>结果会单独展示出来</li>
+          </ul>
+          <div class="card-link">立即开始</div>
+        </article>
+      </section>
+
+      <section class="feature-strip">
+        <div class="feature-item">
+          <strong>上手简单</strong>
+          <span>打开就能用，适合先试一试再深入。</span>
         </div>
-        <div class="app-button">
-          <span class="btn-text">立即体验</span>
-          <span class="btn-icon">→</span>
+        <div class="feature-item">
+          <strong>过程清楚</strong>
+          <span>重要步骤会展示出来，方便你判断结果是否靠谱。</span>
         </div>
-      </div>
-    </div>
-    
-    <div class="cyber-circles">
-      <div class="circle circle-1"></div>
-      <div class="circle circle-2"></div>
-      <div class="circle circle-3"></div>
-    </div>
-    
+        <div class="feature-item">
+          <strong>手机也能用</strong>
+          <span>页面做了收口，日常浏览和输入会更轻松。</span>
+        </div>
+      </section>
+    </main>
     <AppFooter />
   </div>
 </template>
@@ -51,474 +84,264 @@ import { useRouter } from 'vue-router'
 import { useHead } from '@vueuse/head'
 import AppFooter from '../components/AppFooter.vue'
 
-// 设置页面标题和元数据
 useHead({
-  title: '鱼皮AI超级智能体应用平台 - 首页',
+  title: 'AI 助手工作台',
   meta: [
     {
       name: 'description',
-      content: '鱼皮AI超级智能体应用平台提供AI恋爱大师和AI超级智能体服务，满足您的各种AI对话需求'
-    },
-    {
-      name: 'keywords',
-      content: 'AI智能体,AI应用,AI恋爱大师,AI助手,智能对话,鱼皮,AI超级智能体,首页'
+      content: '两个可直接体验的 AI 助手入口。'
     }
   ]
 })
 
 const router = useRouter()
-
-const navigateTo = (path) => {
-  router.push(path)
-}
+const navigateTo = (path) => router.push(path)
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
-
-/* 全局样式变量 */
-:root {
-  --neon-blue: #00f0ff;
-  --neon-purple: #9000ff;
-  --neon-pink: #ff00d4;
-  --cyber-black: #0a0a12;
-  --cyber-dark: #111122;
-  --cyber-light: #edf7ff;
-}
-
-.home-container {
-  display: flex;
-  flex-direction: column;
+.page-shell {
   min-height: 100vh;
-  background-color: var(--cyber-dark);
-  background-image: 
-    linear-gradient(0deg, rgba(8, 17, 34, 0.9), rgba(5, 8, 20, 0.9)),
-    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect x="0" y="0" width="100" height="1" fill="%23111133" opacity="0.3"/><rect x="0" y="0" width="1" height="100" fill="%23111133" opacity="0.3"/></svg>');
-  background-size: auto, 40px 40px;
-  position: relative;
-  overflow: hidden;
+  padding: 24px 0 0;
 }
 
-/* 赛博朋克风格标题 */
-.header {
-  padding: 70px 20px 50px;
-  text-align: center;
-  background-color: transparent;
-  position: relative;
-  z-index: 2;
+.home-page {
+  width: min(calc(100% - 32px), var(--container));
+  margin: 0 auto;
 }
 
-.glitch-wrapper {
-  position: relative;
-  display: inline-block;
-  margin-bottom: 20px;
+.hero-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  gap: 20px;
+  padding: 30px;
+  border-radius: 34px;
+  background: linear-gradient(135deg, rgba(255, 252, 247, 0.95), rgba(249, 244, 234, 0.9));
+  border: 1px solid rgba(31, 42, 36, 0.08);
+  box-shadow: var(--shadow);
 }
 
-.glitch-title {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 3.2rem;
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--primary-deep);
+  font-size: 0.76rem;
   font-weight: 700;
-  color: var(--cyber-light);
-  text-shadow: 
-    0 0 5px rgba(0, 240, 255, 0.7),
-    0 0 10px rgba(0, 240, 255, 0.5),
-    0 0 20px rgba(0, 240, 255, 0.3);
-  letter-spacing: 2px;
-  position: relative;
-  animation: glitch 3s infinite;
-}
-
-.glitch-title::before,
-.glitch-title::after {
-  content: '鱼皮AI超级智能体';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.8;
-}
-
-.glitch-title::before {
-  color: var(--neon-pink);
-  z-index: -1;
-  animation: glitch-anim 2s infinite;
-}
-
-.glitch-title::after {
-  color: var(--neon-blue);
-  z-index: -2;
-  animation: glitch-anim-2 3s infinite;
-}
-
-.subtitle {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.7);
-  max-width: 600px;
-  margin: 0 auto 20px;
-  letter-spacing: 3px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.cyber-line {
-  height: 2px;
-  width: 80%;
-  max-width: 600px;
-  margin: 0 auto;
-  background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
-  position: relative;
+.hero-copy h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3.3vw, 3.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
 }
 
-.cyber-line::before,
-.cyber-line::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 10px;
-  height: 10px;
-  background-color: var(--neon-blue);
-  border-radius: 50%;
-  transform: translateY(-50%);
-  box-shadow: 0 0 10px 2px var(--neon-blue);
+.hero-desc {
+  max-width: 620px;
+  margin: 16px 0 0;
+  color: var(--text-muted);
+  font-size: 0.98rem;
 }
 
-.cyber-line::before {
-  left: 20%;
-}
-
-.cyber-line::after {
-  right: 20%;
-}
-
-.apps-container {
+.hero-actions {
   display: flex;
+  gap: 12px;
+  margin-top: 24px;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 50px;
-  max-width: 1200px;
-  margin: 60px auto;
-  padding: 0 20px;
-  flex: 1;
-  position: relative;
-  z-index: 2;
 }
 
-.app-card {
-  width: 340px;
-  background-color: rgba(17, 23, 41, 0.7);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  box-shadow: 
-    0 8px 32px rgba(0, 240, 255, 0.2),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  padding: 30px;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
+.primary-btn,
+.secondary-btn {
+  padding: 12px 18px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.95rem;
 }
 
-.card-glow {
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    circle at center,
-    rgba(var(--neon-blue-rgb), 0.1) 0%,
-    transparent 70%
-  );
-  opacity: 0;
-  transition: opacity 0.5s;
-  pointer-events: none;
-}
-
-.app-card:hover {
-  transform: translateY(-15px) scale(1.03);
-  box-shadow: 
-    0 15px 50px rgba(0, 240, 255, 0.3),
-    inset 0 0 0 1px rgba(0, 240, 255, 0.5);
-}
-
-.app-card:hover .card-glow {
-  opacity: 1;
-}
-
-.app-icon {
-  font-size: 4rem;
-  margin-bottom: 25px;
-  width: 90px;
-  height: 90px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  position: relative;
-  z-index: 1;
-}
-
-.love-icon {
-  background: linear-gradient(135deg, #ff007a, #ff5722);
-  box-shadow: 0 0 20px rgba(255, 0, 122, 0.5);
-}
-
-.robot-icon {
-  background: linear-gradient(135deg, #00b2ff, #4f56ff);
-  box-shadow: 0 0 20px rgba(0, 178, 255, 0.5);
-}
-
-.app-info {
-  text-align: center;
-  margin-bottom: 30px;
-  width: 100%;
-}
-
-.app-title {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 1.6rem;
-  font-weight: bold;
+.primary-btn {
+  background: linear-gradient(135deg, var(--primary), var(--primary-deep));
   color: white;
-  margin-bottom: 12px;
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
 }
 
-.app-desc {
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.7);
+.secondary-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.hero-panel {
+  border-radius: 24px;
+  padding: 22px;
+  background: linear-gradient(180deg, #21413b, #172924);
+  color: var(--text-light);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  align-content: start;
+}
+
+.hero-stat {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.hero-stat span {
+  display: block;
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+
+.hero-stat small {
+  color: rgba(238, 243, 239, 0.74);
+  font-size: 0.85rem;
+}
+
+.hero-note {
+  grid-column: 1 / -1;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(209, 77, 114, 0.22), rgba(217, 119, 6, 0.22));
   line-height: 1.6;
+  font-size: 0.92rem;
 }
 
-.app-button {
-  background: linear-gradient(90deg, #0088ff, #00b2ff);
-  color: white;
-  padding: 12px 28px;
-  border-radius: 30px;
-  font-weight: 500;
-  transition: all 0.3s;
-  margin-top: auto;
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 22px;
+}
+
+.product-card {
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(255, 252, 247, 0.88);
+  border: 1px solid rgba(31, 42, 36, 0.08);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+}
+
+.card-top {
   display: flex;
   align-items: center;
-  position: relative;
-  overflow: hidden;
-  border: 1px solid rgba(0, 240, 255, 0.3);
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.app-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.7s;
+.card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 0.95rem;
 }
 
-.app-button:hover {
-  box-shadow: 0 0 15px rgba(0, 178, 255, 0.7);
-  transform: scale(1.05);
+.product-card.love .card-icon {
+  background: linear-gradient(135deg, #d14d72, #f08b66);
 }
 
-.app-button:hover::before {
-  left: 100%;
+.product-card.super .card-icon {
+  background: linear-gradient(135deg, #0f766e, #2563eb);
 }
 
-.btn-text {
-  margin-right: 8px;
-  letter-spacing: 1px;
+.card-tag {
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(31, 42, 36, 0.06);
+  font-size: 0.78rem;
+  color: var(--text-muted);
 }
 
-.btn-icon {
-  font-size: 1.2rem;
-  transition: transform 0.3s;
+.product-card h2 {
+  margin: 16px 0 8px;
+  font-size: 1.55rem;
 }
 
-.app-button:hover .btn-icon {
-  transform: translateX(4px);
+.product-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.94rem;
 }
 
-/* 背景圆圈动画 */
-.cyber-circles {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  z-index: 1;
+.product-card ul {
+  margin: 18px 0 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+  line-height: 1.75;
+  font-size: 0.91rem;
 }
 
-.circle {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.15;
+.card-link {
+  margin-top: 18px;
+  color: var(--primary-deep);
+  font-weight: 700;
+  font-size: 0.94rem;
 }
 
-.circle-1 {
-  width: 300px;
-  height: 300px;
-  top: -100px;
-  right: -100px;
-  background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
-  animation: float 15s infinite alternate;
+.feature-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 22px 0;
 }
 
-.circle-2 {
-  width: 500px;
-  height: 500px;
-  bottom: -200px;
-  left: -200px;
-  background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
-  animation: float 20s infinite alternate-reverse;
+.feature-item {
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(31, 42, 36, 0.08);
 }
 
-.circle-3 {
-  width: 200px;
-  height: 200px;
-  top: 40%;
-  right: 15%;
-  background: linear-gradient(135deg, var(--neon-pink), var(--neon-blue));
-  animation: float 12s infinite alternate;
+.feature-item strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.95rem;
 }
 
-/* 动画效果 */
-@keyframes float {
-  0% {
-    transform: translate(0, 0) rotate(0deg);
+.feature-item span {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 960px) {
+  .hero-card,
+  .card-grid,
+  .feature-strip {
+    grid-template-columns: 1fr;
   }
-  100% {
-    transform: translate(50px, 50px) rotate(10deg);
-  }
-}
 
-@keyframes glitch {
-  0% {
-    text-shadow: 
-      0 0 5px rgba(0, 240, 255, 0.7),
-      0 0 10px rgba(0, 240, 255, 0.5);
-  }
-  50% {
-    text-shadow: 
-      0 0 5px rgba(0, 240, 255, 0.7),
-      0 0 10px rgba(0, 240, 255, 0.5),
-      0 0 20px rgba(0, 240, 255, 0.3);
-  }
-  100% {
-    text-shadow: 
-      0 0 5px rgba(0, 240, 255, 0.7),
-      0 0 10px rgba(0, 240, 255, 0.5);
+  .hero-card {
+    padding: 24px;
   }
 }
 
-@keyframes glitch-anim {
-  0%, 100% {
-    transform: translate(0);
+@media (max-width: 640px) {
+  .page-shell {
+    padding-top: 16px;
   }
-  20% {
-    transform: translate(-5px, 5px);
-  }
-  40% {
-    transform: translate(-5px, -5px);
-  }
-  60% {
-    transform: translate(5px, 5px);
-  }
-  80% {
-    transform: translate(5px, -5px);
-  }
-}
 
-@keyframes glitch-anim-2 {
-  0%, 100% {
-    transform: translate(0);
+  .home-page {
+    width: min(calc(100% - 20px), var(--container));
   }
-  20% {
-    transform: translate(3px, -3px);
-  }
-  40% {
-    transform: translate(3px, 3px);
-  }
-  60% {
-    transform: translate(-3px, -3px);
-  }
-  80% {
-    transform: translate(-3px, 3px);
-  }
-}
 
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .glitch-title {
-    font-size: 2.5rem;
+  .hero-card,
+  .product-card,
+  .feature-item {
+    border-radius: 24px;
   }
-  
-  .subtitle {
-    font-size: 1rem;
-  }
-  
-  .apps-container {
-    gap: 30px;
-    margin: 40px auto;
-  }
-  
-  .app-card {
-    width: 100%;
-    max-width: 420px;
-    padding: 25px;
-  }
-  
-  .app-icon {
-    font-size: 3.5rem;
-    width: 80px;
-    height: 80px;
-  }
-}
 
-@media (max-width: 480px) {
-  .header {
-    padding: 50px 15px 40px;
-  }
-  
-  .glitch-title {
+  .hero-copy h1 {
     font-size: 2rem;
   }
-  
-  .subtitle {
-    font-size: 0.9rem;
-    letter-spacing: 2px;
-  }
-  
-  .apps-container {
-    margin: 30px auto;
-    padding: 0 15px;
-  }
-  
-  .app-card {
-    padding: 20px;
-  }
-  
-  .app-icon {
-    font-size: 3rem;
-    margin-bottom: 20px;
-    width: 70px;
-    height: 70px;
-  }
-  
-  .app-title {
-    font-size: 1.4rem;
-  }
-  
-  .app-desc {
-    font-size: 0.9rem;
-  }
-  
-  .circle-1, .circle-2, .circle-3 {
-    opacity: 0.1;
-  }
 }
-</style> 
+</style>

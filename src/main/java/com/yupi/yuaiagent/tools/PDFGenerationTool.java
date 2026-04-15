@@ -11,8 +11,10 @@ import com.itextpdf.layout.element.Paragraph;
 import com.yupi.yuaiagent.constant.FileConstant;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.web.util.UriUtils;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -21,6 +23,8 @@ import java.util.List;
  * PDF 生成工具
  */
 public class PDFGenerationTool {
+
+    static final String PDF_READY_PREFIX = "PDF_READY:";
 
     private static final List<Path> CJK_FONT_CANDIDATES = List.of(
             Path.of("C:/Windows/Fonts/simhei.ttf"),
@@ -44,10 +48,22 @@ public class PDFGenerationTool {
                 Paragraph paragraph = new Paragraph(content);
                 document.add(paragraph);
             }
-            return "PDF generated successfully to: " + filePath;
+            return buildDownloadPayload(fileName);
         } catch (IOException e) {
             return "Error generating PDF: " + e.getMessage();
         }
+    }
+
+    String buildDownloadPayload(String fileName) {
+        String encodedFileName = UriUtils.encodePathSegment(fileName, StandardCharsets.UTF_8);
+        return PDF_READY_PREFIX + "{\"fileName\":\"" + escapeJson(fileName)
+                + "\",\"downloadPath\":\"/files/pdf/" + encodedFileName + "\"}";
+    }
+
+    private String escapeJson(String value) {
+        return value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"");
     }
 
     private PdfFont createPdfFont() throws IOException {

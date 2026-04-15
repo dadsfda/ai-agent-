@@ -19,18 +19,19 @@ class PDFGenerationToolTest {
     void generatePDFShouldEmbedReadableChineseFont() throws Exception {
         PDFGenerationTool tool = new PDFGenerationTool();
         String fileName = "pdf-generation-test.pdf";
-        String content = "武汉一日游规划：黄鹤楼、东湖、户部巷";
+        String content = "Wuhan one day tour";
 
         String result = tool.generatePDF(fileName, content);
         Path pdfPath = Path.of(FileConstant.FILE_SAVE_DIR, "pdf", fileName);
 
-        Assertions.assertTrue(Files.exists(pdfPath), "PDF 文件应当被创建");
-        Assertions.assertTrue(result.contains("PDF generated successfully"), "生成结果应提示成功，实际为: " + result);
+        Assertions.assertTrue(Files.exists(pdfPath), "PDF file should be created");
+        Assertions.assertTrue(result.startsWith("PDF_READY:"), "Result should expose a downloadable payload: " + result);
+        Assertions.assertTrue(result.contains("/files/pdf/pdf-generation-test.pdf"), "Result should contain the download path: " + result);
 
         try (PdfDocument pdfDocument = new PdfDocument(new PdfReader(pdfPath.toString()))) {
             String extractedText = PdfTextExtractor.getTextFromPage(pdfDocument.getPage(1));
-            Assertions.assertTrue(extractedText.contains("武汉一日游规划"), "PDF 不应为空白，实际提取内容为: " + extractedText);
-            Assertions.assertTrue(hasEmbeddedFont(pdfDocument.getPage(1)), "PDF 应嵌入可渲染的字体文件，否则不同查看器可能显示为空白");
+            Assertions.assertTrue(extractedText.contains("Wuhan one day tour"), "PDF should contain readable text: " + extractedText);
+            Assertions.assertTrue(hasEmbeddedFont(pdfDocument.getPage(1)), "PDF should embed a usable font file");
         }
     }
 

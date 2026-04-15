@@ -6,8 +6,8 @@ const routes = [
     name: 'Home',
     component: () => import('../views/Home.vue'),
     meta: {
-      title: '首页 - 鱼皮AI超级智能体应用平台',
-      description: '鱼皮AI超级智能体应用平台提供AI恋爱大师和AI超级智能体服务，满足您的各种AI对话需求'
+      title: 'AI Agent 工作台',
+      description: '基于 Spring AI 的双智能体应用，包含恋爱大师与超级智能体工作台。'
     }
   },
   {
@@ -15,8 +15,8 @@ const routes = [
     name: 'LoveMaster',
     component: () => import('../views/LoveMaster.vue'),
     meta: {
-      title: 'AI恋爱大师 - 鱼皮AI超级智能体应用平台',
-      description: 'AI恋爱大师是鱼皮AI超级智能体应用平台的专业情感顾问，帮你解答各种恋爱问题，提供情感建议'
+      title: '恋爱大师工作台',
+      description: '面向情感咨询场景的 AI 对话工作台。'
     }
   },
   {
@@ -24,8 +24,8 @@ const routes = [
     name: 'SuperAgent',
     component: () => import('../views/SuperAgent.vue'),
     meta: {
-      title: 'AI超级智能体 - 鱼皮AI超级智能体应用平台',
-      description: 'AI超级智能体是鱼皮AI超级智能体应用平台的全能助手，能解答各类专业问题，提供精准建议和解决方案'
+      title: '超级智能体工作台',
+      description: '支持工具调用、分步执行与结果产出的智能体工作台。'
     }
   }
 ]
@@ -35,13 +35,11 @@ const router = createRouter({
   routes
 })
 
-// 全局导航守卫，设置文档标题
 router.beforeEach((to, from, next) => {
-  // 设置页面标题
   if (to.meta.title) {
     document.title = to.meta.title
   }
   next()
 })
 
-export default router 
+export default router
