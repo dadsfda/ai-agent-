@@ -1,6 +1,7 @@
 # AI Agent 项目
 
 基于 Spring AI 的智能体示例项目，包含后端服务、前端页面、工具调用链路，以及一个图片搜索 MCP 子项目。
+<img width="1511" height="762" alt="image" src="https://github.com/user-attachments/assets/1e3599cb-9a3d-4d7c-9201-240a4f3312b9" />
 
 这个仓库适合作为 Spring AI Agent 的实战起点，覆盖了以下能力：
 - 普通聊天与流式输出
@@ -36,20 +37,21 @@
 - MCP Client / MCP Server
 
 ## 主要能力
-![alt text](image.png)
+
 
 ### 1. AI 聊天应用
 
 后端提供基础聊天与流式响应接口，可接入 DashScope 模型完成普通问答场景。
-![alt text](image-1.png)
+<img width="978" height="673" alt="image" src="https://github.com/user-attachments/assets/6266bb17-870e-4e22-9256-62b526eef11a" />
+
 ### 2. 超级智能体
 
 项目内置 `YuManus` 风格 Agent，支持根据用户目标自动分步执行任务，例如：
 - 搜索武汉热门景点
 - 规划一日游路线
 - 调用 PDF 工具生成文档
-![alt text](image-2.png)
-![alt text](image-3.png)
+<img width="1070" height="856" alt="image" src="https://github.com/user-attachments/assets/14daab61-aaed-4d8a-8f61-069e38c2121e" />
+
 ### 3. 工具调用
 
 当前仓库已经集成并验证过以下工具链：
@@ -179,18 +181,6 @@ npm run build
 ### 3. 前端端口变化
 
 如果默认端口被占用，Vite 会自动切换端口，实际以终端输出为准。
-
-## 推送到你自己的 GitHub 仓库
-
-如果你是从别人的仓库拉下来的，推荐把原仓库保留为上游，把你自己的仓库设置为新的 `origin`。
-
-示例：
-
-```powershell
-git remote rename origin upstream
-git remote add origin https://github.com/<your-name>/<your-repo>.git
-git push -u origin master
-```
 
 ## 说明
 
