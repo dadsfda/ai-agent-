@@ -30,7 +30,9 @@ import java.util.stream.Collectors;
 public class ToolCallAgent extends ReActAgent {
 
     private static final int MAX_TOOL_ARGUMENT_LENGTH = 1000;
+    private static final int MAX_TOOL_RESPONSE_LENGTH = 4000;
     private static final String COMPACTED_TOOL_ARGUMENTS = "{\"omitted\":true}";
+    private static final String COMPACTED_TOOL_RESPONSE = "{\"omitted\":true}";
     private static final String TERMINATE_TOOL_NAME = "doTerminate";
     private static final String TERMINATE_PLACEHOLDER = "\u4efb\u52a1\u7ed3\u675f";
     private static final String TOOL_PREFIX = "\u8c03\u7528\u5de5\u5177: ";
@@ -170,23 +172,33 @@ public class ToolCallAgent extends ReActAgent {
     List<Message> compactConversationHistory(List<Message> messageList) {
         return messageList.stream()
                 .map(message -> {
-                    if (!(message instanceof AssistantMessage assistantMessage) || assistantMessage.getToolCalls().isEmpty()) {
-                        return message;
+                    if (message instanceof AssistantMessage assistantMessage && !assistantMessage.getToolCalls().isEmpty()) {
+                        List<AssistantMessage.ToolCall> compactedToolCalls = assistantMessage.getToolCalls().stream()
+                                .map(toolCall -> new AssistantMessage.ToolCall(
+                                        toolCall.id(),
+                                        toolCall.type(),
+                                        toolCall.name(),
+                                        compactToolArguments(toolCall.arguments())
+                                ))
+                                .toList();
+                        return new AssistantMessage(
+                                assistantMessage.getText(),
+                                assistantMessage.getMetadata(),
+                                compactedToolCalls,
+                                assistantMessage.getMedia()
+                        );
                     }
-                    List<AssistantMessage.ToolCall> compactedToolCalls = assistantMessage.getToolCalls().stream()
-                            .map(toolCall -> new AssistantMessage.ToolCall(
-                                    toolCall.id(),
-                                    toolCall.type(),
-                                    toolCall.name(),
-                                    compactToolArguments(toolCall.arguments())
-                            ))
-                            .toList();
-                    return new AssistantMessage(
-                            assistantMessage.getText(),
-                            assistantMessage.getMetadata(),
-                            compactedToolCalls,
-                            assistantMessage.getMedia()
-                    );
+                    if (message instanceof ToolResponseMessage toolResponseMessage) {
+                        List<ToolResponseMessage.ToolResponse> compactedResponses = toolResponseMessage.getResponses().stream()
+                                .map(toolResponse -> new ToolResponseMessage.ToolResponse(
+                                        toolResponse.id(),
+                                        toolResponse.name(),
+                                        compactToolResponseData(toolResponse.responseData())
+                                ))
+                                .toList();
+                        return new ToolResponseMessage(compactedResponses, toolResponseMessage.getMetadata());
+                    }
+                    return message;
                 })
                 .collect(Collectors.toCollection(ArrayList::new));
     }
@@ -237,5 +249,15 @@ public class ToolCallAgent extends ReActAgent {
             return arguments;
         }
         return COMPACTED_TOOL_ARGUMENTS;
+    }
+
+    private String compactToolResponseData(String responseData) {
+        if (StrUtil.isBlank(responseData)) {
+            return COMPACTED_TOOL_RESPONSE;
+        }
+        if (responseData.length() <= MAX_TOOL_RESPONSE_LENGTH) {
+            return responseData;
+        }
+        return COMPACTED_TOOL_RESPONSE;
     }
 }

@@ -104,6 +104,24 @@ class ToolCallAgentTest {
     }
 
     @Test
+    void shouldCompactOversizedToolResponsesBeforeNextRound() {
+        ToolCallAgent agent = new ToolCallAgent(new ToolCallback[0]);
+        ToolResponseMessage.ToolResponse toolResponse = new ToolResponseMessage.ToolResponse(
+                "tool-call-oversized",
+                "scrapeWebPage",
+                "<html>" + "A".repeat(5000) + "</html>"
+        );
+        ToolResponseMessage toolResponseMessage = new ToolResponseMessage(List.of(toolResponse));
+
+        List<Message> compacted = agent.compactConversationHistory(List.of(toolResponseMessage));
+        ToolResponseMessage compactedMessage = (ToolResponseMessage) compacted.get(0);
+        ToolResponseMessage.ToolResponse compactedToolResponse = compactedMessage.getResponses().get(0);
+
+        Assertions.assertEquals("{\"omitted\":true}", compactedToolResponse.responseData());
+        Assertions.assertEquals("scrapeWebPage", compactedToolResponse.name());
+    }
+
+    @Test
     void shouldSummarizeToolStepAsToolOnly() {
         ToolCallAgent agent = new ToolCallAgent(new ToolCallback[0]);
         AssistantMessage.ToolCall toolCall = new AssistantMessage.ToolCall(
