@@ -17,8 +17,8 @@
 ```text
 .
 ├─ src/                         后端 Spring Boot 主项目
-├─ yu-ai-agent-frontend/        前端 Vue 3 + Vite 项目
-├─ yu-image-search-mcp-server/  图片搜索 MCP 子项目
+├─ agent-frontend/        前端 Vue 3 + Vite 项目
+├─ agent-image-search-mcp-server/  图片搜索 MCP 子项目
 ├─ application-local.yml        本地开发配置（已被忽略，不会提交）
 └─ pom.xml                      后端 Maven 配置
 ```
@@ -46,7 +46,7 @@
 
 ### 2. 超级智能体
 
-项目内置 `YuManus` 风格 Agent，支持根据用户目标自动分步执行任务，例如：
+项目内置 `AgentManus` 风格 Agent，支持根据用户目标自动分步执行任务，例如：
 - 搜索武汉热门景点
 - 规划一日游路线
 - 调用 PDF 工具生成文档
@@ -70,7 +70,7 @@
 
 ### 5. MCP 子项目
 
-仓库包含 `yu-image-search-mcp-server`，可作为后续接入图片搜索能力的扩展入口。
+仓库包含 `agent-image-search-mcp-server`，可作为后续接入图片搜索能力的扩展入口。
 
 ## 本地开发环境
 
@@ -127,7 +127,7 @@ search-api:
 ### 2. 启动前端
 
 ```powershell
-cd .\yu-ai-agent-frontend
+cd .\agent-frontend
 npm install
 npm run dev
 ```
@@ -137,7 +137,7 @@ npm run dev
 ### 3. 构建前端
 
 ```powershell
-cd .\yu-ai-agent-frontend
+cd .\agent-frontend
 npm run build
 ```
 
